@@ -8,21 +8,10 @@ from app.db.db import get_database
 
 class UserService:
     def __init__(self, database: Database):
-        """
-        Initialize UserService with a database instance
-        """
         self.db = database
         self.collection = self.db["users"]  
 
-    @classmethod
-    async def get_instance(cls) -> 'UserService':
-        """
-        Factory method to create UserService instance with database connection
-        """
-        db = await get_database()
-        return cls(db)
-
-    async def create_user(self, user_data: dict) -> User:
+    def create_user(self, user_data: dict) -> User:
         try:
             # Generate new ObjectId and convert to string
             user_data["_id"] = str(ObjectId())
@@ -32,14 +21,15 @@ class UserService:
             user_data.setdefault("followings_ids", [])
             user_data.setdefault("posts_ids", [])
 
-            await self.collection.create_index("username", unique=True)
-            await self.collection.create_index("email", unique=True)
+            # Create unique indexes
+            self.collection.create_index("username", unique=True)
+            self.collection.create_index("email", unique=True)
 
             # Insert into database
-            await self.collection.insert_one(user_data)
+            self.collection.insert_one(user_data)
             
             # Retrieve and return the created user
-            created_user = await self.collection.find_one({"_id": user_data["_id"]})
+            created_user = self.collection.find_one({"_id": user_data["_id"]})
             if not created_user:
                 raise HTTPException(status_code=500, detail="User creation failed")
             
@@ -58,9 +48,9 @@ class UserService:
                 detail=f"Error creating user: {str(e)}"
             )
 
-    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+    def get_user_by_id(self, user_id: str) -> Optional[User]:
         try:
-            user = await self.collection.find_one({"_id": user_id})
+            user = self.collection.find_one({"_id": user_id})
             if not user:
                 return None
             return User(**user)
@@ -70,7 +60,7 @@ class UserService:
                 detail=f"Error fetching user: {str(e)}"
             )
 
-    async def update_user(self, user_id: str, update_data: dict) -> Optional[User]:
+    def update_user(self, user_id: str, update_data: dict) -> Optional[User]:
         try:
             # Remove empty fields and _id from update_data
             update_data = {k: v for k, v in update_data.items() 
@@ -83,11 +73,11 @@ class UserService:
                 )
 
             # Check if user exists before update
-            existing_user = await self.get_user_by_id(user_id)
+            existing_user = self.get_user_by_id(user_id)
             if not existing_user:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            result = await self.collection.update_one(
+            result = self.collection.update_one(
                 {"_id": user_id},
                 {"$set": update_data}
             )
@@ -99,7 +89,7 @@ class UserService:
                 )
 
             # Retrieve and return the updated user
-            updated_user = await self.collection.find_one({"_id": user_id})
+            updated_user = self.collection.find_one({"_id": user_id})
             return User(**updated_user)
 
         except DuplicateKeyError as e:
@@ -116,9 +106,9 @@ class UserService:
                 detail=f"Error updating user: {str(e)}"
             )
 
-    async def delete_user(self, user_id: str) -> bool:
+    def delete_user(self, user_id: str) -> bool:
         try:
-            result = await self.collection.delete_one({"_id": user_id})
+            result = self.collection.delete_one({"_id": user_id})
             if result.deleted_count == 0:
                 raise HTTPException(status_code=404, detail="User not found")
             return True
@@ -128,11 +118,11 @@ class UserService:
                 detail=f"Error deleting user: {str(e)}"
             )
 
-    async def get_users(self, skip: int = 0, limit: int = 10) -> List[User]:
+    def get_users(self, skip: int = 0, limit: int = 10) -> List[User]:
         try:
             users = []
             cursor = self.collection.find().skip(skip).limit(limit)
-            async for user in cursor:
+            for user in cursor:
                 users.append(User(**user))
             return users
         except Exception as e:
@@ -140,3 +130,11 @@ class UserService:
                 status_code=500,
                 detail=f"Error fetching users: {str(e)}"
             )
+
+    @classmethod
+    def get_instance(cls):
+        """
+        Factory method to create UserService instance with database connection
+        """
+        db = get_database()
+        return cls(db)
