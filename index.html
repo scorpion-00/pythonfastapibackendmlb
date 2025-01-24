@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Teams and Players</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .teams-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .team-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .team-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .players-list {
+            list-style: none;
+            padding: 0;
+        }
+        .players-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>MLB Teams and Players</h1>
+    <div id="content">
+        <div class="loading">Loading teams and players...</div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://mlb-backend.vercel.app';
+
+        async function fetchTeamsAndPlayers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/team_and_players`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+                const data = await response.json();
+                displayTeamsAndPlayers(data);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        Error loading data. Please make sure the backend server is running at ${API_BASE_URL}
+                    </div>
+                `;
+            }
+        }
+
+        function displayTeamsAndPlayers(teams) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="teams-container">
+                    ${teams.map(team => `
+                        <div class="team-card">
+                            <div class="team-name">${team.name}</div>
+                            <ul class="players-list">
+                                ${team.players.map(player => `
+                                    <li>${player.name} - ${player.position || 'Unknown Position'}</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', fetchTeamsAndPlayers);
+    </script>
+</body>
+</html>
