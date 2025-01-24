@@ -14,8 +14,8 @@ class SuccessResponse(BaseModel):
 router = APIRouter(prefix="/users", tags=["users"])
 
 # Dependency to get UserService instance
-async def get_user_service():
-    return await UserService.get_instance()
+def get_user_service():
+    return UserService.get_instance()
 
 @router.post("/", 
     response_model=SuccessResponse,
@@ -26,12 +26,12 @@ async def get_user_service():
         422: {"description": "Validation Error"}
     }
 )
-async def create_user(
+def create_user(
     user_data: UserCreate,
     user_service: UserService = Depends(get_user_service)
 ):
     try:
-        user = await user_service.create_user(user_data.dict())
+        user = user_service.create_user(user_data.dict())
         return SuccessResponse(
             status="success",
             message="User created successfully",
@@ -65,11 +65,11 @@ async def create_user(
         404: {"description": "User not found"}
     }
 )
-async def get_user(
+def get_user(
     user_id: str,
     user_service: UserService = Depends(get_user_service)
 ):
-    user = await user_service.get_user_by_id(user_id)
+    user = user_service.get_user_by_id(user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -94,7 +94,7 @@ async def get_user(
         422: {"description": "Validation Error"}
     }
 )
-async def update_user(
+def update_user(
     user_id: str,
     user_data: UserUpdate,
     user_service: UserService = Depends(get_user_service)
@@ -111,7 +111,7 @@ async def update_user(
                 }
             )
         
-        updated_user = await user_service.update_user(user_id, update_data)
+        updated_user = user_service.update_user(user_id, update_data)
         return SuccessResponse(
             status="success",
             message="User updated successfully",
@@ -145,12 +145,12 @@ async def update_user(
         404: {"description": "User not found"}
     }
 )
-async def delete_user(
+def delete_user(
     user_id: str,
     user_service: UserService = Depends(get_user_service)
 ):
     try:
-        await user_service.delete_user(user_id)
+        user_service.delete_user(user_id)
         return SuccessResponse(
             status="success",
             message="User deleted successfully"
@@ -174,7 +174,7 @@ async def delete_user(
         400: {"description": "Invalid pagination parameters"}
     }
 )
-async def get_users(
+def get_users(
     skip: int = 0,
     limit: int = 10,
     user_service: UserService = Depends(get_user_service)
@@ -190,7 +190,7 @@ async def get_users(
         )
     
     try:
-        users = await user_service.get_users(skip=skip, limit=limit)
+        users = user_service.get_users(skip=skip, limit=limit)
         return SuccessResponse(
             status="success",
             message="Users retrieved successfully",
