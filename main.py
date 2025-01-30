@@ -1,3 +1,5 @@
+# bin change
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from app.api import info_routes, user_routes
